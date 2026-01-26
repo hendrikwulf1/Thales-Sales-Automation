@@ -1,0 +1,11 @@
+[project]
+name = "thales-agent"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "google-adk>=1.23.0",
+    "google-genai>=1.60.0",
+    "google-search-results>=2.4.2",
+]

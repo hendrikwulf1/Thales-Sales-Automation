@@ -1,0 +1,9 @@
+README.md
+pyproject.toml
+my_Agent/__init__.py
+my_Agent/agent.py
+thales_agent.egg-info/PKG-INFO
+thales_agent.egg-info/SOURCES.txt
+thales_agent.egg-info/dependency_links.txt
+thales_agent.egg-info/requires.txt
+thales_agent.egg-info/top_level.txt
