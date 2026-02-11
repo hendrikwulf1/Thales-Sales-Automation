@@ -130,7 +130,7 @@ def analyze_company(user_input, persona_name):
     # Using 'gemini-flash-latest' for high rate limits (avoiding 429 errors)
     try:
         model = genai.GenerativeModel(
-            model_name='gemini-flash-latest', 
+            model_name='gemini-1.5-flash', 
             tools=[run_search],
             system_instruction=system_instruction
         )
