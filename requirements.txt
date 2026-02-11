@@ -1,0 +1,8 @@
+streamlit
+google-generativeai
+duckduckgo-search
+python-dotenv
+pypdf
+termcolor
+
+#Includes every tool we are using (The Brain, The Search, The UI, The PDF Reader)

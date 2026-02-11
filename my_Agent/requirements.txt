@@ -1,3 +1,0 @@
-pypdf
-python-dotenv
-googlesearch-python
