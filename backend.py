@@ -1,7 +1,9 @@
 # --- FILE: backend.py ---
 import os
+import time
 import pypdf
 import google.generativeai as genai
+from google.api_core import exceptions
 from duckduckgo_search import DDGS
 from dotenv import load_dotenv
 from personas import SALES_PERSONAS
@@ -12,61 +14,91 @@ import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
-# Configure the API Key
+# Configure API
 api_key = os.environ.get("GOOGLE_API_KEY")
 if not api_key:
     raise ValueError("GOOGLE_API_KEY not found in .env file")
 genai.configure(api_key=api_key)
 
+# --- ROBUST MODEL LIST ---
+# The Agent will try these in order until one works.
+# We prioritize 1.5 versions because they don't require billing verification.
+MODEL_PRIORITY_LIST = [
+    "gemini-1.5-flash",        # Standard (15 RPM)
+    "gemini-1.5-flash-8b",     # High Volume (Often separate quota)
+    "gemini-1.5-pro",          # Smarter, lower rate limit (2 RPM)
+    "gemini-1.0-pro"           # Old faithful (Legacy backup)
+]
+
 # --- PHASE 0: PREREQUISITES ---
 EXCLUSION_LIST = ["Example Company Inc.", "Thales"]
 
-def load_perfect_customer_profile():
-    try:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        path = os.path.join(base_dir, "knowledge_base", "Perfect Customer Profile.pdf")
-        if not os.path.exists(path): return "Rule: Prioritize High-Revenue SaaS/Hybrid companies."
-        reader = pypdf.PdfReader(path)
-        text = ""
-        for page in reader.pages: text += page.extract_text() + "\n"
-        return text
-    except: return "Rule: Prioritize High-Revenue SaaS/Hybrid companies."
-
-def load_general_knowledge():
+def load_knowledge_base():
+    # Combines PCP and General Knowledge into one text block
     base_dir = os.path.dirname(os.path.abspath(__file__))
     kb_dir = os.path.join(base_dir, "knowledge_base")
-    context = ""
+    combined_text = "Rule: Prioritize High-Revenue SaaS/Hybrid companies.\n"
+    
     if os.path.exists(kb_dir):
         for f in os.listdir(kb_dir):
-            if f.endswith(".pdf") and "Perfect Customer Profile" not in f:
+            if f.endswith(".pdf"):
                 try:
                     reader = pypdf.PdfReader(os.path.join(kb_dir, f))
-                    for page in reader.pages: context += page.extract_text() + "\n"
+                    for page in reader.pages: combined_text += page.extract_text() + "\n"
                 except: pass
-    return context
+    return combined_text
 
-# Load assets once on startup
-PCP_CONTENT = load_perfect_customer_profile()
-GENERAL_KNOWLEDGE = load_general_knowledge()
+KB_CONTENT = load_knowledge_base()
 
 # --- TOOL: SEARCH ---
 def run_search(query):
-    """
-    Performs a live web search. 
-    Crucial for finding email patterns and validating roles.
-    """
     try:
-        # Increased to 7 results to find better email patterns
-        results = DDGS().text(query, max_results=7)
+        # Reduced to 5 results to save processing tokens
+        results = DDGS().text(query, max_results=5)
         if results:
             return "\n".join([f"Title: {r['title']}\nSnippet: {r['body']}" for r in results])
         return "No results found."
     except Exception as e:
         return f"Search Error: {e}"
 
-# --- THE LOGIC CORE (MASTER PLAN v3.1) ---
-def analyze_company(user_input, persona_name):
+# --- THE SELF-HEALING ENGINE ---
+def try_generate_content(prompt, system_instruction):
+    """
+    Tries models one by one. If one fails (404 or 429), it moves to the next.
+    """
+    last_error = ""
     
+    for model_name in MODEL_PRIORITY_LIST:
+        print(f"🤖 Trying Brain: {model_name}...")
+        try:
+            model = genai.GenerativeModel(
+                model_name=model_name,
+                tools=[run_search],
+                system_instruction=system_instruction
+            )
+            chat = model.start_chat(enable_automatic_function_calling=True)
+            response = chat.send_message(prompt)
+            return response.text  # If successful, return immediately
+            
+        except exceptions.ResourceExhausted:
+            print(f"⚠️ {model_name} is exhausted (429). Switching...")
+            last_error = f"Quota exceeded on {model_name}"
+            time.sleep(1) # Brief pause before next try
+            continue
+        except exceptions.NotFound:
+            print(f"⚠️ {model_name} not found (404). Switching...")
+            last_error = f"Model {model_name} not found"
+            continue
+        except Exception as e:
+            print(f"⚠️ Unexpected error on {model_name}: {e}")
+            last_error = str(e)
+            continue
+
+    # If we loop through ALL models and fail:
+    raise Exception(f"All models failed. Last error: {last_error}")
+
+# --- MAIN LOGIC ---
+def analyze_company(user_input, persona_name):
     # 0. EXCLUSION CHECK
     for blocked in EXCLUSION_LIST:
         if blocked.lower() in user_input.lower():
@@ -81,39 +113,18 @@ def analyze_company(user_input, persona_name):
     You are the **Thales Sales Automation Architect**. 
     Execute "Master Plan v3.1" to find, verify, and engage prospects.
 
-    === PART 0: PREREQUISITES ===
-    **The Perfect Customer Profile (PCP):**
-    {PCP_CONTENT}
+    === KNOWLEDGE BASE ===
+    {KB_CONTENT}
 
-    **Your Persona (The Voice):**
+    === YOUR VOICE ===
     {style_guide}
 
-    **Knowledge Base:**
-    {GENERAL_KNOWLEDGE}
-
-    === EXECUTION PIPELINE ===
+    === INSTRUCTIONS ===
     Target: "{user_input}"
-
-    --- PHASE 1: ROUTER ---
-    * If input is Region + Quantity -> List companies. STOP.
-    * If input is Company Name -> Proceed to Phase 2.
-
-    --- PHASE 2: GATEKEEPER ---
-    1. Search for Business Model & Revenue.
-    2. COMPARE against PCP.
-    3. IF NO MATCH: Output "🔴 DISQUALIFIED" and explain why. STOP.
-    4. IF MATCH: Generate Data Table & Proceed.
-
-    --- PHASE 3: LEAD & EMAIL FORENSICS (The Detective) ---
-    1.  **Identify the Role:** Search for "VP of Product" or "Head of Software".
-    2.  **Pattern Discovery (CRITICAL):** * Execute a Search for: 'email format {user_input}' OR 'contact {user_input} email address'.
-        * Look for public signals (e.g., "j.doe@company.com" vs "john.doe@company.com").
-        * Deduce the pattern and apply it to the Target Person's name.
-    3.  **Output:** Target Name, Role, Verified/Estimated Email.
-
-    --- PHASE 4: DRAFTING (CRITICAL FORMATTING) ---
-    Draft an email to the Target Person using the **Persona Style**.
-    Map Pain Points to Thales Solutions (Sentinel/LDK).
+    1. **Search**: Check Business Model, Revenue, and Key Roles (VP Product/Head of Eng).
+    2. **Pattern Hunt**: Search for 'email format {user_input}' to deduce the email pattern.
+    3. **Verify**: Compare against the Perfect Customer Profile.
+    4. **Draft**: Write the email in the requested persona.
 
     !!! IMPORTANT OUTPUT RULE !!!
     You MUST enclose the **Final Email Draft** (Subject and Body only) inside these XML tags:
@@ -122,22 +133,10 @@ def analyze_company(user_input, persona_name):
     Hi [Name],
     ...
     </email_draft>
-    
-    Anything outside these tags will be considered "Research Notes" and will NOT be sent to the email client.
     """
 
-    # 3. GENERATION
-    # Using 'gemini-flash-latest' for high rate limits (avoiding 429 errors)
+    # 3. CALL THE SELF-HEALING ENGINE
     try:
-        model = genai.GenerativeModel(
-            model_name='gemini-1.5-flash-002', 
-            tools=[run_search],
-            system_instruction=system_instruction
-        )
-        
-        chat = model.start_chat(enable_automatic_function_calling=True)
-        response = chat.send_message(f"Execute Master Plan for target: {user_input}")
-        return response.text
+        return try_generate_content(f"Analyze {user_input}", system_instruction)
     except Exception as e:
-        # Fallback if the specific model name fails
-        return f"❌ **Error during analysis:** {str(e)}"
+        return f"❌ **System Failure:** {str(e)}\n\n*Tip: If you see this, wait 10 minutes. You may have hit the daily cap for ALL free models.*"
