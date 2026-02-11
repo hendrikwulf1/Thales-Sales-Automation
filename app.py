@@ -1,6 +1,8 @@
 # --- FILE: app.py ---
 import sys
 import os
+import re
+import urllib.parse
 
 # --- PATH PATCH (The Fix) ---
 # This forces Python to look in the current folder for backend.py
@@ -46,12 +48,40 @@ if submitted and company_name:
             st.markdown("---")
             st.markdown(result)
             
-            # Action Buttons
-            col1, col2 = st.columns(2)
+            # --- NEW AUTOMATION LOGIC STARTS HERE ---
+            
+            # 1. Extract Email Address (Regex)
+            # Looks for a pattern like "name@domain.com" in the AI's output
+            email_match = re.search(r'[\w.+-]+@[\w-]+\.[\w.-]+', result)
+            target_email = email_match.group(0) if email_match else ""
+            
+            # 2. Prepare the Mailto Link
+            # We encode the subject and body so they work inside a URL
+            subject = f"Question regarding Software Monetization at {company_name}"
+            
+            # NOTE: We are putting the *entire* AI output into the email body.
+            # You will need to delete the "Research" part in Outlook before sending.
+            body_encoded = urllib.parse.quote(result) 
+            subject_encoded = urllib.parse.quote(subject)
+            
+            mailto_link = f"mailto:{target_email}?subject={subject_encoded}&body={body_encoded}"
+
+            # 3. Action Buttons
+            st.markdown("---")
+            col1, col2 = st.columns([1, 2])
+            
             with col1:
-                st.button("✅ Approve & Copy Email")
+                # The "One-Click Send" Button
+                if target_email:
+                    st.link_button(f"📧 Open Draft for {target_email}", mailto_link)
+                else:
+                    st.link_button("📧 Open Blank Draft", f"mailto:?subject={subject_encoded}&body={body_encoded}")
+                    
             with col2:
-                st.button("🔄 Regenerate Analysis")
+                if target_email:
+                    st.caption(f"✅ Auto-detected email: **{target_email}**")
+                else:
+                    st.warning("⚠️ No specific email address found in the analysis. You will need to add the recipient manually.")
                 
         except Exception as e:
             st.error(f"An error occurred: {e}")
