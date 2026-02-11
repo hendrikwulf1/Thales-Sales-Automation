@@ -4,12 +4,11 @@ import os
 import re
 import urllib.parse
 
-# --- PATH PATCH (The Fix) ---
-# This forces Python to look in the current folder for backend.py
+# --- PATH PATCH ---
+# Forces Python to look in the current folder for backend.py and personas.py
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import streamlit as st
-# Now this import will work because we forced the path above
 from backend import analyze_company 
 from personas import SALES_PERSONAS
 
@@ -18,15 +17,13 @@ st.set_page_config(page_title="Thales Sales Agent", page_icon="🤖", layout="wi
 
 # 2. Sidebar: Persona Selector
 st.sidebar.title("👤 Identity")
-# Create a list of names for the dropdown
 persona_names = [p["name"] for p in SALES_PERSONAS.values()]
 selected_user_name = st.sidebar.selectbox("Who are you?", persona_names)
-
 st.sidebar.info(f"Drafting emails as: **{selected_user_name}**")
 
 # 3. Main Content
 st.title("🤖 Thales Sales Automation Agent")
-st.markdown("### 🎯 Lead Enrichment & Outreach Generator (v3.0)")
+st.markdown("### 🎯 Lead Enrichment & Outreach Generator (v3.1)")
 
 # Input Area
 with st.form("analysis_form"):
@@ -35,53 +32,68 @@ with st.form("analysis_form"):
 
 # 4. Execution Logic
 if submitted and company_name:
-    # visual feedback while processing
-    with st.spinner(f"🔍 Researching {company_name}, checking 'Perfect Customer Profile', and drafting email..."):
+    # Visual feedback
+    with st.spinner(f"🔍 Researching {company_name}, finding email patterns, and drafting..."):
         
-        # Call the backend "Master Plan" function
-        # We pass the company name and the selected user's name
         try:
+            # CALL THE BRAIN
             result = analyze_company(company_name, selected_user_name)
             
-            # Display Result
+            # --- DISPLAY THE RESEARCH (THE WHOLE ANALYSIS) ---
             st.success("Analysis Complete!")
             st.markdown("---")
             st.markdown(result)
             
-            # --- NEW AUTOMATION LOGIC STARTS HERE ---
+            # --- CLEANING LOGIC FOR EMAIL BUTTON ---
             
-            # 1. Extract Email Address (Regex)
-            # Looks for a pattern like "name@domain.com" in the AI's output
+            # 1. Extract Target Email Address (for the "To:" field)
             email_match = re.search(r'[\w.+-]+@[\w-]+\.[\w.-]+', result)
             target_email = email_match.group(0) if email_match else ""
+
+            # 2. Extract ONLY the Clean Draft (Subject + Body)
+            # This looks for the <email_draft> tags we put in backend.py
+            draft_match = re.search(r'<email_draft>(.*?)</email_draft>', result, re.DOTALL)
             
-            # 2. Prepare the Mailto Link
-            # We encode the subject and body so they work inside a URL
-            subject = f"Question regarding Software Monetization at {company_name}"
+            if draft_match:
+                # We found the clean tag!
+                clean_email_content = draft_match.group(1).strip()
+                
+                # Separate Subject line from Body (assuming first line is Subject)
+                lines = clean_email_content.split('\n', 1)
+                
+                # Clean up "Subject:" prefix if it exists
+                raw_subject = lines[0].replace("Subject:", "").strip()
+                raw_body = lines[1].strip() if len(lines) > 1 else clean_email_content
+                
+            else:
+                # Fallback: If AI forgot tags, use specific Subject but generic Body
+                raw_subject = f"Question regarding Software Monetization at {company_name}"
+                raw_body = "Could not extract clean draft. Please copy text manually."
             
-            # NOTE: We are putting the *entire* AI output into the email body.
-            # You will need to delete the "Research" part in Outlook before sending.
-            body_encoded = urllib.parse.quote(result) 
-            subject_encoded = urllib.parse.quote(subject)
+            # 3. Create the Safe Link
+            # We encode the text so it works as a URL
+            subject_encoded = urllib.parse.quote(raw_subject)
+            body_encoded = urllib.parse.quote(raw_body)
             
+            # The Mailto Link
             mailto_link = f"mailto:{target_email}?subject={subject_encoded}&body={body_encoded}"
 
-            # 3. Action Buttons
+            # 4. Action Buttons
             st.markdown("---")
             col1, col2 = st.columns([1, 2])
             
             with col1:
-                # The "One-Click Send" Button
-                if target_email:
-                    st.link_button(f"📧 Open Draft for {target_email}", mailto_link)
-                else:
-                    st.link_button("📧 Open Blank Draft", f"mailto:?subject={subject_encoded}&body={body_encoded}")
+                # The Magic Button
+                st.link_button(f"📧 Open Draft in Outlook", mailto_link)
                     
             with col2:
                 if target_email:
                     st.caption(f"✅ Auto-detected email: **{target_email}**")
                 else:
-                    st.warning("⚠️ No specific email address found in the analysis. You will need to add the recipient manually.")
+                    st.warning("⚠️ No specific email found. Recipient will be blank.")
+                st.caption("ℹ️ *Clicking this opens your default email app (Outlook/Mail).*")
                 
         except Exception as e:
-            st.error(f"An error occurred: {e}")
+            # Error Shield
+            st.error(f"⚠️ An error occurred during processing.")
+            st.warning(str(e))
