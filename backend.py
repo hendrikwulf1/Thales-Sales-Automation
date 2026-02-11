@@ -156,7 +156,7 @@ def analyze_company(user_input, persona_name):
 
     # 3. GENERATION
     model = genai.GenerativeModel(
-        model_name='gemini-1.5-flash',
+        model_name='gemini-2.0-flash',
         tools=[run_search],
         system_instruction=system_instruction
     )
