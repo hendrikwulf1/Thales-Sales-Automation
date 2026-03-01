@@ -5,7 +5,6 @@ import pypdf
 import warnings
 from google import genai
 from google.genai import types
-from duckduckgo_search import DDGS
 from dotenv import load_dotenv
 from personas import SALES_PERSONAS
 
@@ -22,12 +21,11 @@ if not api_key:
 # Initialize the new unified client
 client = genai.Client(api_key=api_key)
 
-# --- ROBUST MODEL LIST (UPDATED FOR NEW SDK) ---
-# The Agent will try these in order until one works.
+# --- ROBUST MODEL LIST (ALIGNED TO YOUR API KEY) ---
+# The Agent will try these in order. 
 MODEL_PRIORITY_LIST = [
-    "gemini-2.5-flash",        # The newest, highly capable fast model
-    "gemini-2.0-flash",        # Highly available standard
-    "gemini-2.0-flash-exp"     # Experimental high-quota fallback
+    "gemini-1.5-flash",        # Extremely fast, great for standard search
+    "gemini-1.5-pro",          # Smarter, deeper reasoning fallback
 ]
 
 # --- PHASE 0: PREREQUISITES ---
@@ -52,44 +50,20 @@ def load_knowledge_base():
 
 KB_CONTENT = load_knowledge_base()
 
-# --- TOOL: SEARCH ---
-# Note: Type hints (query: str) are highly recommended for the new GenAI SDK tools
-# --- TOOL: SEARCH (UPGRADED FOR CLOUD ENVIRONMENTS) ---
-def run_search(query: str) -> str:
-    """Searches the web using DuckDuckGo to find company information and employees."""
-    print(f"\n🔎 Agent is searching for: {query}") # Added terminal visibility!
-    try:
-        # Using the 'html' backend often bypasses Codespaces/Cloudflare bot blocks
-        results = DDGS().text(query, max_results=5, backend="html")
-        
-        # DDGS().text returns a generator, we need to convert it to a list to check if it's empty
-        results_list = list(results) if results else []
-        
-        if results_list:
-            print(f"✅ Found {len(results_list)} results.")
-            return "\n".join([f"Title: {r['title']}\nSnippet: {r['body']}" for r in results_list])
-            
-        print("⚠️ Search returned empty.")
-        return "No results found."
-        
-    except Exception as e:
-        print(f"❌ Search Error: {e}")
-        return f"Search Error: {e}"
-
-# --- THE SELF-HEALING ENGINE (MIGRATED TO V2 SDK) ---
+# --- THE SELF-HEALING ENGINE (UPGRADED WITH NATIVE GOOGLE SEARCH) ---
 def try_generate_content(prompt, system_instruction):
     """
-    Tries models one by one using the new google-genai SDK.
+    Tries models one by one using the new google-genai SDK and Native Google Search.
     """
     last_error = ""
     
     for model_name in MODEL_PRIORITY_LIST:
         print(f"🤖 Trying Brain: {model_name}...")
         try:
-            # The new SDK requires a config object for tools and system instructions
+            # We are activating Gemini's built-in Google Search capabilities natively!
             config = types.GenerateContentConfig(
                 system_instruction=system_instruction,
-                tools=[run_search], # The SDK automatically handles function calling now
+                tools=[{"google_search": {}}], # Native Google Search Enabled
                 temperature=0.7
             )
             
@@ -107,6 +81,7 @@ def try_generate_content(prompt, system_instruction):
 
     # If we loop through ALL models and fail:
     raise Exception(f"All models failed. Last error: {last_error}")
+
 
 # --- MAIN LOGIC ---
 def analyze_company(user_input, persona_name):
