@@ -21,18 +21,17 @@ if not api_key:
 # Initialize the new unified client
 client = genai.Client(api_key=api_key)
 
-# --- ROBUST MODEL LIST (ALIGNED TO YOUR API KEY) ---
-# The Agent will try these in order. 
+# --- ROBUST MODEL LIST (V2 SDK COMPLIANT) ---
 MODEL_PRIORITY_LIST = [
-    "gemini-1.5-flash",        # Extremely fast, great for standard search
-    "gemini-1.5-pro",          # Smarter, deeper reasoning fallback
+    "gemini-2.5-flash",        # The newest, highly capable fast model
+    "gemini-2.0-flash",        # Highly available standard
+    "gemini-2.0-flash-exp"     # Experimental high-quota fallback
 ]
 
 # --- PHASE 0: PREREQUISITES ---
 EXCLUSION_LIST = ["Example Company Inc.", "Thales"]
 
 def load_knowledge_base():
-    # Combines PCP and General Knowledge into one text block
     base_dir = os.path.dirname(os.path.abspath(__file__))
     kb_dir = os.path.join(base_dir, "knowledge_base")
     combined_text = "Rule: Prioritize High-Revenue SaaS/Hybrid companies.\n"
@@ -60,10 +59,14 @@ def try_generate_content(prompt, system_instruction):
     for model_name in MODEL_PRIORITY_LIST:
         print(f"🤖 Trying Brain: {model_name}...")
         try:
-            # We are activating Gemini's built-in Google Search capabilities natively!
+            # Using strict SDK typing for the Google Search Tool
+            search_tool = types.Tool(
+                google_search=types.GoogleSearch()
+            )
+
             config = types.GenerateContentConfig(
                 system_instruction=system_instruction,
-                tools=[{"google_search": {}}], # Native Google Search Enabled
+                tools=[search_tool], # Native Google Search Enabled
                 temperature=0.7
             )
             
@@ -79,22 +82,17 @@ def try_generate_content(prompt, system_instruction):
             time.sleep(1) # Brief pause before next try
             continue
 
-    # If we loop through ALL models and fail:
     raise Exception(f"All models failed. Last error: {last_error}")
-
 
 # --- MAIN LOGIC ---
 def analyze_company(user_input, persona_name):
-    # 0. EXCLUSION CHECK
     for blocked in EXCLUSION_LIST:
         if blocked.lower() in user_input.lower():
             return f"🚫 **STOP:** '{blocked}' is on the Exclusion List."
 
-    # 1. PERSONA LOADING
     selected_persona = next((p for p in SALES_PERSONAS.values() if p["name"] == persona_name), None)
     style_guide = selected_persona["style_guide"] if selected_persona else "Professional Standard"
 
-    # 2. SYSTEM INSTRUCTION (UPDATED FOR V3.1)
     system_instruction = f"""
     You are the **Thales Sales Automation Architect**. 
     Execute "Master Plan v3.1" to find, verify, and engage prospects.
@@ -150,7 +148,6 @@ def analyze_company(user_input, persona_name):
     </email_draft>
     """
 
-    # 3. CALL THE SELF-HEALING ENGINE
     try:
         return try_generate_content(f"Analyze {user_input}", system_instruction)
     except Exception as e:
