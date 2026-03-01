@@ -8,6 +8,7 @@ from google.genai import types
 from dotenv import load_dotenv
 from personas import SALES_PERSONAS
 
+
 # CONFIGURATION
 load_dotenv()
 warnings.filterwarnings("ignore", category=FutureWarning)
