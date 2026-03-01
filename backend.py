@@ -54,14 +54,26 @@ KB_CONTENT = load_knowledge_base()
 
 # --- TOOL: SEARCH ---
 # Note: Type hints (query: str) are highly recommended for the new GenAI SDK tools
+# --- TOOL: SEARCH (UPGRADED FOR CLOUD ENVIRONMENTS) ---
 def run_search(query: str) -> str:
     """Searches the web using DuckDuckGo to find company information and employees."""
+    print(f"\n🔎 Agent is searching for: {query}") # Added terminal visibility!
     try:
-        results = DDGS().text(query, max_results=5)
-        if results:
-            return "\n".join([f"Title: {r['title']}\nSnippet: {r['body']}" for r in results])
+        # Using the 'html' backend often bypasses Codespaces/Cloudflare bot blocks
+        results = DDGS().text(query, max_results=5, backend="html")
+        
+        # DDGS().text returns a generator, we need to convert it to a list to check if it's empty
+        results_list = list(results) if results else []
+        
+        if results_list:
+            print(f"✅ Found {len(results_list)} results.")
+            return "\n".join([f"Title: {r['title']}\nSnippet: {r['body']}" for r in results_list])
+            
+        print("⚠️ Search returned empty.")
         return "No results found."
+        
     except Exception as e:
+        print(f"❌ Search Error: {e}")
         return f"Search Error: {e}"
 
 # --- THE SELF-HEALING ENGINE (MIGRATED TO V2 SDK) ---
