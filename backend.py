@@ -24,10 +24,8 @@ genai.configure(api_key=api_key)
 # The Agent will try these in order until one works.
 # We prioritize 1.5 versions because they don't require billing verification.
 MODEL_PRIORITY_LIST = [
-    "gemini-1.5-flash",        # Standard (15 RPM)
-    "gemini-1.5-flash-8b",     # High Volume (Often separate quota)
-    "gemini-1.5-pro",          # Smarter, lower rate limit (2 RPM)
-    "gemini-1.0-pro"           # Old faithful (Legacy backup)
+    "gemini-1.5-flash",        # Fallback 1
+    "gemini-1.5-pro"           # Fallback 2 (Smarter, but lower rate limit)
 ]
 
 # --- PHASE 0: PREREQUISITES ---
@@ -109,6 +107,7 @@ def analyze_company(user_input, persona_name):
     style_guide = selected_persona["style_guide"] if selected_persona else "Professional Standard"
 
     # 2. SYSTEM INSTRUCTION
+    # 2. SYSTEM INSTRUCTION (UPDATED FOR V3.1)
     system_instruction = f"""
     You are the **Thales Sales Automation Architect**. 
     Execute "Master Plan v3.1" to find, verify, and engage prospects.
@@ -116,25 +115,53 @@ def analyze_company(user_input, persona_name):
     === KNOWLEDGE BASE ===
     {KB_CONTENT}
 
-    === YOUR VOICE ===
-    {style_guide}
+    === TARGET DEFINITION (STRICT ABM FOCUS) ===
+    You must identify 6 to 7 current, highly warm decision-makers at the target company (scale down to 3-4 only if it is a very small firm). 
+    Do NOT search for or generate email addresses. We only want highly accurate Names and Roles.
+    
+    You are RESTRICTED to finding employees who hold one of the following roles (or very close variations):
+    1. VP / Director of IT / Enterprise Systems
+    2. Chief Technology Officer (CTO)
+    3. Chief Product Officer (CPO)
+    4. Director of Pricing & Monetization
+    5. VP / Director of Revenue Operations (RevOps) / Business Ops
+    6. VP / Director of Engineering (or R&D)
+    7. VP / Director of Product Management
 
-    === INSTRUCTIONS ===
-    Target: "{user_input}"
-    1. **Search**: Check Business Model, Revenue, and Key Roles (VP Product/Head of Eng).
-    2. **Pattern Hunt**: Search for 'email format {user_input}' to deduce the email pattern.
-    3. **Verify**: Compare against the Perfect Customer Profile.
-    4. **Draft**: Write the email in the requested persona.
+    Output format for contacts: 
+    - Full Name | Exact Job Title 
+
+    === VALUE PROPOSITION ANALYSIS ===
+    Before drafting an email, you must build a "Why [Company] is a strong prospect for Thales SM" analysis.
+    Follow this exact structure:
+    1. Short overview of how the company delivers value.
+    2. Section: "Why [Company] is a strong prospect for Thales SM".
+    3. Break the value down into 3-4 specific challenges and solutions.
+       * For each, name the challenge, explain why it exists for them, and explain how Thales Sentinel (LDK, RMS, Cloud, EMS, HL, etc.) solves it.
+       * End each point with a clear business outcome.
+    Ensure this is industry-specific and tailored to their real products. Map this to recent strategies found on their website.
+
+    === YOUR VOICE, STYLE, AND TONE === 
+    You must adopt the exact writing DNA, style, tone, length, and structure of this specific Sales Rep Persona: 
+    {style_guide} 
+    
+    CRITICAL INSTRUCTION: Analyze the example emails provided in the persona guide above. Your generated email MUST look and feel exactly like this specific persona wrote it. 
+    - Mimic their typical openings, closings, sentence length, and formatting habits. 
+    - Do NOT force a generic 4-paragraph structure if it contradicts how this persona naturally writes. 
+    
+    While perfectly matching their unique style, naturally weave in the information you gathered during your Value Proposition Analysis. Ensure the email: 
+    * References specific initiatives of the target company. 
+    * Introduces Thales Sentinel (securing, licensing, monetizing software) in a way that fits the rep's voice. 
+    * Closes with a request for a 20-minute conversation.
 
     !!! IMPORTANT OUTPUT RULE !!!
-    You MUST enclose the **Final Email Draft** (Subject and Body only) inside these XML tags:
+    Enclose the **Final Email Draft** inside these XML tags:
     <email_draft>
     Subject: ...
-    Hi [Name],
+    Hi [Name of the most relevant stakeholder found above],
     ...
     </email_draft>
     """
-
     # 3. CALL THE SELF-HEALING ENGINE
     try:
         return try_generate_content(f"Analyze {user_input}", system_instruction)
