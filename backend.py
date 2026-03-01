@@ -2,30 +2,32 @@
 import os
 import time
 import pypdf
-import google.generativeai as genai
-from google.api_core import exceptions
+import warnings
+from google import genai
+from google.genai import types
 from duckduckgo_search import DDGS
 from dotenv import load_dotenv
 from personas import SALES_PERSONAS
 
 # CONFIGURATION
 load_dotenv()
-import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
-# Configure API
+# Configure API using the new Client architecture
 api_key = os.environ.get("GOOGLE_API_KEY")
 if not api_key:
     raise ValueError("GOOGLE_API_KEY not found in .env file")
-genai.configure(api_key=api_key)
 
-# --- ROBUST MODEL LIST ---
+# Initialize the new unified client
+client = genai.Client(api_key=api_key)
+
+# --- ROBUST MODEL LIST (UPDATED FOR NEW SDK) ---
 # The Agent will try these in order until one works.
-# We prioritize 1.5 versions because they don't require billing verification.
 MODEL_PRIORITY_LIST = [
-    "gemini-1.5-flash",        # Fallback 1
-    "gemini-1.5-pro"           # Fallback 2 (Smarter, but lower rate limit)
+    "gemini-2.5-flash",        # The newest, highly capable fast model
+    "gemini-2.0-flash",        # Highly available standard
+    "gemini-2.0-flash-exp"     # Experimental high-quota fallback
 ]
 
 # --- PHASE 0: PREREQUISITES ---
@@ -42,16 +44,19 @@ def load_knowledge_base():
             if f.endswith(".pdf"):
                 try:
                     reader = pypdf.PdfReader(os.path.join(kb_dir, f))
-                    for page in reader.pages: combined_text += page.extract_text() + "\n"
-                except: pass
+                    for page in reader.pages: 
+                        combined_text += page.extract_text() + "\n"
+                except Exception as e: 
+                    print(f"Error reading PDF {f}: {e}")
     return combined_text
 
 KB_CONTENT = load_knowledge_base()
 
 # --- TOOL: SEARCH ---
-def run_search(query):
+# Note: Type hints (query: str) are highly recommended for the new GenAI SDK tools
+def run_search(query: str) -> str:
+    """Searches the web using DuckDuckGo to find company information and employees."""
     try:
-        # Reduced to 5 results to save processing tokens
         results = DDGS().text(query, max_results=5)
         if results:
             return "\n".join([f"Title: {r['title']}\nSnippet: {r['body']}" for r in results])
@@ -59,37 +64,33 @@ def run_search(query):
     except Exception as e:
         return f"Search Error: {e}"
 
-# --- THE SELF-HEALING ENGINE ---
+# --- THE SELF-HEALING ENGINE (MIGRATED TO V2 SDK) ---
 def try_generate_content(prompt, system_instruction):
     """
-    Tries models one by one. If one fails (404 or 429), it moves to the next.
+    Tries models one by one using the new google-genai SDK.
     """
     last_error = ""
     
     for model_name in MODEL_PRIORITY_LIST:
         print(f"🤖 Trying Brain: {model_name}...")
         try:
-            model = genai.GenerativeModel(
-                model_name=model_name,
-                tools=[run_search],
-                system_instruction=system_instruction
+            # The new SDK requires a config object for tools and system instructions
+            config = types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                tools=[run_search], # The SDK automatically handles function calling now
+                temperature=0.7
             )
-            chat = model.start_chat(enable_automatic_function_calling=True)
+            
+            # Use the client to create a chat session
+            chat = client.chats.create(model=model_name, config=config)
             response = chat.send_message(prompt)
+            
             return response.text  # If successful, return immediately
             
-        except exceptions.ResourceExhausted:
-            print(f"⚠️ {model_name} is exhausted (429). Switching...")
-            last_error = f"Quota exceeded on {model_name}"
-            time.sleep(1) # Brief pause before next try
-            continue
-        except exceptions.NotFound:
-            print(f"⚠️ {model_name} not found (404). Switching...")
-            last_error = f"Model {model_name} not found"
-            continue
         except Exception as e:
-            print(f"⚠️ Unexpected error on {model_name}: {e}")
+            print(f"⚠️ Error on {model_name}: {e}")
             last_error = str(e)
+            time.sleep(1) # Brief pause before next try
             continue
 
     # If we loop through ALL models and fail:
@@ -106,7 +107,6 @@ def analyze_company(user_input, persona_name):
     selected_persona = next((p for p in SALES_PERSONAS.values() if p["name"] == persona_name), None)
     style_guide = selected_persona["style_guide"] if selected_persona else "Professional Standard"
 
-    # 2. SYSTEM INSTRUCTION
     # 2. SYSTEM INSTRUCTION (UPDATED FOR V3.1)
     system_instruction = f"""
     You are the **Thales Sales Automation Architect**. 
@@ -162,6 +162,7 @@ def analyze_company(user_input, persona_name):
     ...
     </email_draft>
     """
+
     # 3. CALL THE SELF-HEALING ENGINE
     try:
         return try_generate_content(f"Analyze {user_input}", system_instruction)
