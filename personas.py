@@ -5,56 +5,56 @@
 
 SALES_PERSONAS = {
     "1": {
-        "name": "Per",
+        "name": "...",
         "style_guide": """
         [PASTE 3-5 EXAMPLE EMAILS FROM PER HERE.
         THE AGENT WILL ANALYZE THEM TO MIMIC HIS TONE, OPENINGS, AND CLOSINGS.]
         """
     },
     "2": {
-        "name": "Otis",
+        "name": "...",
         "style_guide": """
         [PASTE 3-5 EXAMPLE EMAILS FROM OTIS HERE.
         THE AGENT WILL ANALYZE THEM TO MIMIC HIS TONE, OPENINGS, AND CLOSINGS.]
         """
     },
     "3": {
-        "name": "Faziel",
+        "name": "...",
         "style_guide": """
         [PASTE 3-5 EXAMPLE EMAILS FROM FAZIEL HERE.
         THE AGENT WILL ANALYZE THEM TO MIMIC HIS TONE, OPENINGS, AND CLOSINGS.]
         """
     },
     "4": {
-        "name": "Robin",
+        "name": "...",
         "style_guide": """
         [PASTE 3-5 EXAMPLE EMAILS FROM ROBIN HERE.
         THE AGENT WILL ANALYZE THEM TO MIMIC HIS TONE, OPENINGS, AND CLOSINGS.]
         """
     },
     "5": {
-        "name": "Matthias",
+        "name": "...",
         "style_guide": """
         [PASTE 3-5 EXAMPLE EMAILS FROM MATTHIAS HERE.
         THE AGENT WILL ANALYZE THEM TO MIMIC HIS TONE, OPENINGS, AND CLOSINGS.]
         """
     },
     "6": {
-        "name": "Tanisha",
+        "name": "...",
         "style_guide": """
         [PASTE 3-5 EXAMPLE EMAILS FROM TANISHA HERE.
         THE AGENT WILL ANALYZE THEM TO MIMIC HER TONE, OPENINGS, AND CLOSINGS.]
         """
     },
     "7": {
-        "name": "Samuel",
+        "name": "...",
         "style_guide": """
         [PASTE 3-5 EXAMPLE EMAILS FROM SAMUEL HERE.
         THE AGENT WILL ANALYZE THEM TO MIMIC HIS TONE, OPENINGS, AND CLOSINGS.]
         """
     },
     "8": {
-        "name": "Jonathan",
+        "name": "...",
         "style_guide": """
         [PASTE 3-5 EXAMPLE EMAILS FROM JONATHAN HERE.
         THE AGENT WILL ANALYZE THEM TO MIMIC HIS TONE, OPENINGS, AND CLOSINGS.]
