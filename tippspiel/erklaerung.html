@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tippspiel Erklärung</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0d1117; color: #e6edf3; font-family: 'Segoe UI', sans-serif; padding: 2rem 1rem; }
+  h1 { text-align: center; font-size: 1.6rem; margin-bottom: .3rem; }
+  .sub { text-align: center; color: #8b949e; font-size: .9rem; margin-bottom: 2.5rem; }
+  .container { max-width: 860px; margin: 0 auto; }
+
+  /* SECTION */
+  .section { margin-bottom: 2.5rem; }
+  .section-title {
+    font-size: .7rem; text-transform: uppercase; letter-spacing: .12em;
+    color: #8b949e; font-weight: 700; margin-bottom: 1rem;
+    display: flex; align-items: center; gap: .5rem;
+  }
+  .section-title::after { content:''; flex:1; height:1px; background:#21262d; }
+
+  /* PUNKTE-KARTEN */
+  .points-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 1rem; }
+  .point-card {
+    background: #161b22; border: 1px solid #30363d; border-radius: 14px;
+    padding: 1.25rem 1rem; text-align: center; position: relative; overflow: hidden;
+  }
+  .point-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+  .card-3::before { background: #3fb950; }
+  .card-2::before { background: #58a6ff; }
+  .card-1::before { background: #e3b341; }
+  .card-0::before { background: #6b7280; }
+
+  .pts-big { font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: .4rem; }
+  .card-3 .pts-big { color: #3fb950; }
+  .card-2 .pts-big { color: #58a6ff; }
+  .card-1 .pts-big { color: #e3b341; }
+  .card-0 .pts-big { color: #4b5563; }
+
+  .pts-label { font-size: .85rem; font-weight: 700; margin-bottom: .5rem; }
+  .pts-example { font-size: .78rem; color: #8b949e; }
+  .score-pill {
+    display: inline-block; background: #21262d; border-radius: 6px;
+    padding: .1rem .45rem; font-family: monospace; font-size: .9rem; color: #cdd9e5;
+  }
+  .arrow { color: #8b949e; margin: 0 .3rem; }
+
+  /* GELDVERTEILUNG */
+  .pot-visual { background: #0d2818; border: 1px solid #3fb950; border-radius: 14px; padding: 1.5rem; margin-bottom: 1rem; }
+  .pot-example { display: flex; align-items: center; gap: .75rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .pot-num { font-size: 2rem; font-weight: 900; color: #3fb950; }
+  .pot-desc { color: #8b949e; font-size: .85rem; }
+
+  .dist-bars { display: flex; flex-direction: column; gap: .6rem; }
+  .dist-row { display: flex; align-items: center; gap: .75rem; }
+  .dist-rank {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: .85rem; flex-shrink: 0;
+  }
+  .dist-rank-1 { background: #b8860b; color: #fff; }
+  .dist-rank-2 { background: #6b7280; color: #fff; }
+  .dist-rank-3 { background: #7c4a1e; color: #fff; }
+  .dist-bar-wrap { flex: 1; background: #21262d; border-radius: 8px; height: 28px; overflow: hidden; }
+  .dist-bar { height: 100%; border-radius: 8px; display: flex; align-items: center; padding-left: .6rem; font-size: .78rem; font-weight: 700; white-space: nowrap; }
+  .bar-1 { background: linear-gradient(90deg,#3d2e00,#b8860b); color: #ffd700; width: 50%; }
+  .bar-2 { background: linear-gradient(90deg,#1e2d3a,#2d5a8e); color: #58a6ff; width: 30%; }
+  .bar-3 { background: linear-gradient(90deg,#2d1900,#7c4a1e); color: #cd7f32; width: 20%; }
+  .dist-pct { font-weight: 800; font-size: 1rem; width: 40px; text-align: right; color: #e6edf3; }
+  .dist-euro { font-weight: 700; font-size: .9rem; color: #3fb950; width: 70px; text-align: right; }
+
+  /* GLEICHSTAND */
+  .tie-box { background: #161b22; border: 1px solid #30363d; border-radius: 14px; padding: 1.25rem; }
+  .tie-title { font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem; }
+  .tie-step { display: flex; gap: .75rem; margin-bottom: .85rem; align-items: flex-start; }
+  .step-num {
+    width: 24px; height: 24px; border-radius: 50%; background: #21262d;
+    color: #8b949e; display: flex; align-items: center; justify-content: center;
+    font-size: .75rem; font-weight: 700; flex-shrink: 0; margin-top: 2px;
+  }
+  .step-text { font-size: .85rem; line-height: 1.5; color: #cdd9e5; }
+  .step-text strong { color: #e6edf3; }
+  .hl-green { color: #3fb950; font-weight: 700; }
+  .hl-blue  { color: #58a6ff; font-weight: 700; }
+
+  .example-box {
+    background: #0d1117; border: 1px solid #21262d; border-radius: 10px;
+    padding: 1rem; margin-top: 1rem; font-size: .82rem;
+  }
+  .example-box .ex-title { color: #8b949e; font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; margin-bottom: .6rem; }
+  .ex-row { display: flex; align-items: center; gap: .5rem; margin-bottom: .4rem; }
+  .ex-badge {
+    width: 22px; height: 22px; border-radius: 50%; font-size: .7rem; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ex-1 { background: #b8860b; color: #fff; }
+  .ex-2 { background: #6b7280; color: #fff; }
+  .ex-3 { background: #7c4a1e; color: #fff; }
+  .ex-name { flex: 1; }
+  .ex-euro { font-weight: 700; color: #3fb950; }
+
+  /* SORT */
+  .sort-flow { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+  .sort-step {
+    background: #161b22; border: 1px solid #30363d; border-radius: 10px;
+    padding: .6rem 1rem; font-size: .82rem; font-weight: 600; text-align: center;
+  }
+  .sort-arrow { color: #3fb950; font-size: 1.2rem; }
+
+  /* FOOTER */
+  .footer { text-align: center; color: #3b4148; font-size: .72rem; margin-top: 2rem; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>⚽ Tippspiel – Systemübersicht</h1>
+  <p class="sub">Deutschland vs. Curaçao · 5 € Einsatz pro Person · Zahlung per PayPal</p>
+
+  <!-- PUNKTESYSTEM -->
+  <div class="section">
+    <div class="section-title">Punktesystem</div>
+    <div class="points-grid">
+      <div class="point-card card-3">
+        <div class="pts-big">3</div>
+        <div class="pts-label">Exaktes Ergebnis</div>
+        <div class="pts-example">
+          Tipp <span class="score-pill">3:1</span><span class="arrow">→</span>Spiel <span class="score-pill">3:1</span>
+        </div>
+      </div>
+      <div class="point-card card-2">
+        <div class="pts-big">2</div>
+        <div class="pts-label">Richtige Tordifferenz</div>
+        <div class="pts-example">
+          Tipp <span class="score-pill">2:0</span><span class="arrow">→</span>Spiel <span class="score-pill">3:1</span>
+          <div style="margin-top:.3rem;font-size:.72rem">(Diff. jeweils +2)</div>
+        </div>
+      </div>
+      <div class="point-card card-1">
+        <div class="pts-big">1</div>
+        <div class="pts-label">Richtige Tendenz</div>
+        <div class="pts-example">
+          Tipp <span class="score-pill">1:0</span><span class="arrow">→</span>Spiel <span class="score-pill">3:0</span>
+          <div style="margin-top:.3rem;font-size:.72rem">(DE gewinnt in beiden)</div>
+        </div>
+      </div>
+      <div class="point-card card-0">
+        <div class="pts-big">0</div>
+        <div class="pts-label">Komplett falsch</div>
+        <div class="pts-example">
+          Tipp <span class="score-pill">0:1</span><span class="arrow">→</span>Spiel <span class="score-pill">3:0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SORTIERUNG -->
+  <div class="section">
+    <div class="section-title">Sortierung & Rangvergabe</div>
+    <div class="sort-flow">
+      <div class="sort-step">📊 Punkte<br><span style="color:#3fb950;font-size:.75rem">absteigend</span></div>
+      <div class="sort-arrow">→</div>
+      <div class="sort-step">⭐ Exakte Treffer<br><span style="color:#58a6ff;font-size:.75rem">bei Gleichstand</span></div>
+      <div class="sort-arrow">→</div>
+      <div class="sort-step">💸 Dead-Heat-Regel<br><span style="color:#e3b341;font-size:.75rem">wenn noch Gleichstand</span></div>
+    </div>
+  </div>
+
+  <!-- GELDVERTEILUNG -->
+  <div class="section">
+    <div class="section-title">Geldverteilung (Beispiel: 10 Mitspieler = 50 €)</div>
+    <div class="pot-visual">
+      <div class="pot-example">
+        <div class="pot-num">50,00 €</div>
+        <div class="pot-desc">10 Mitspieler × 5 € Einsatz</div>
+      </div>
+      <div class="dist-bars">
+        <div class="dist-row">
+          <div class="dist-rank dist-rank-1">🥇</div>
+          <div class="dist-bar-wrap"><div class="dist-bar bar-1">25,00 €</div></div>
+          <div class="dist-pct">50%</div>
+          <div class="dist-euro">25,00 €</div>
+        </div>
+        <div class="dist-row">
+          <div class="dist-rank dist-rank-2">🥈</div>
+          <div class="dist-bar-wrap"><div class="dist-bar bar-2">15,00 €</div></div>
+          <div class="dist-pct">30%</div>
+          <div class="dist-euro">15,00 €</div>
+        </div>
+        <div class="dist-row">
+          <div class="dist-rank dist-rank-3">🥉</div>
+          <div class="dist-bar-wrap"><div class="dist-bar bar-3">10,00 €</div></div>
+          <div class="dist-pct">20%</div>
+          <div class="dist-euro">10,00 €</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEAD HEAT -->
+  <div class="section">
+    <div class="section-title">Dead-Heat-Regel (Gleichstand beim Preisgeld)</div>
+    <div class="tie-box">
+      <div class="tie-title">⚖️ Was passiert bei Punktgleichstand?</div>
+      <div class="tie-step">
+        <div class="step-num">1</div>
+        <div class="step-text">Erst wird nach <strong>Punkten</strong> sortiert (höher = besser).</div>
+      </div>
+      <div class="tie-step">
+        <div class="step-num">2</div>
+        <div class="step-text">Bei gleichen Punkten entscheiden <strong>exakte Treffer</strong> (⭐ = 3-Punkte-Tipp).</div>
+      </div>
+      <div class="tie-step">
+        <div class="step-num">3</div>
+        <div class="step-text">Sind Spieler nach <strong>beiden Kriterien</strong> noch gleich auf → <span class="hl-green">Dead Heat</span>:<br>
+        Die Preisgelder der belegten Ränge werden addiert und gleichmäßig aufgeteilt.</div>
+      </div>
+
+      <div class="example-box">
+        <div class="ex-title">Beispiel – 3 Spieler teilen Platz 1 (Pot: 60 €)</div>
+        <div style="color:#8b949e;font-size:.78rem;margin-bottom:.7rem">
+          Platz 1 (50% = 30 €) + Platz 2 (30% = 18 €) + Platz 3 (20% = 12 €) = <span class="hl-green">60 €</span> ÷ 3 = <span class="hl-green">20 € je Person</span>
+        </div>
+        <div class="ex-row">
+          <div class="ex-badge ex-1">1</div>
+          <div class="ex-name">Anna &nbsp;<span style="color:#8b949e;font-size:.75rem">3 Pkt ⭐</span></div>
+          <div class="ex-euro">20,00 €</div>
+        </div>
+        <div class="ex-row">
+          <div class="ex-badge ex-1">1</div>
+          <div class="ex-name">Ben &nbsp;<span style="color:#8b949e;font-size:.75rem">3 Pkt ⭐</span></div>
+          <div class="ex-euro">20,00 €</div>
+        </div>
+        <div class="ex-row">
+          <div class="ex-badge ex-1">1</div>
+          <div class="ex-name">Clara &nbsp;<span style="color:#8b949e;font-size:.75rem">3 Pkt ⭐</span></div>
+          <div class="ex-euro">20,00 €</div>
+        </div>
+      </div>
+
+      <div class="example-box" style="margin-top:.75rem">
+        <div class="ex-title">Beispiel – Platz 1 klar, 2 Spieler teilen Platz 2 (Pot: 60 €)</div>
+        <div style="color:#8b949e;font-size:.78rem;margin-bottom:.7rem">
+          Platz 1 bekommt 50% = <span class="hl-green">30 €</span>.<br>
+          Platz 2 (30% = 18 €) + Platz 3 (20% = 12 €) = 30 € ÷ 2 = <span class="hl-blue">15 € je Person</span>
+        </div>
+        <div class="ex-row">
+          <div class="ex-badge ex-1">1</div>
+          <div class="ex-name">Anna &nbsp;<span style="color:#8b949e;font-size:.75rem">3 Pkt ⭐</span></div>
+          <div class="ex-euro">30,00 €</div>
+        </div>
+        <div class="ex-row">
+          <div class="ex-badge ex-2">2</div>
+          <div class="ex-name">Ben &nbsp;<span style="color:#8b949e;font-size:.75rem">2 Pkt</span></div>
+          <div class="ex-euro">15,00 €</div>
+        </div>
+        <div class="ex-row">
+          <div class="ex-badge ex-2">2</div>
+          <div class="ex-name">Clara &nbsp;<span style="color:#8b949e;font-size:.75rem">2 Pkt</span></div>
+          <div class="ex-euro">15,00 €</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Privates Tippspiel · 5 € Einsatz · PayPal · Alle Beträge inkl. Dead-Heat-Berechnung</div>
+</div>
+</body>
+</html>
