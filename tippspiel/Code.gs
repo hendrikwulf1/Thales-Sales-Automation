@@ -9,14 +9,10 @@ var EINSATZ       = 5;
 // Trage hier die ID deiner Google-Tabelle ein.
 // Du findest sie in der URL deiner Tabelle:
 // https://docs.google.com/spreadsheets/d/DIESE_ID_HIER/edit
-var SPREADSHEET_ID = "DEINE_TABELLEN_ID_HIER";
+var SPREADSHEET_ID = "1ZP1TGAPDy23wZDAYPJ2jOh7GGfu46A7Mi-mh6MhAFxI";
 
 function getSpreadsheet() {
-  if (SPREADSHEET_ID && SPREADSHEET_ID !== "DEINE_TABELLEN_ID_HIER") {
-    return SpreadsheetApp.openById(SPREADSHEET_ID);
-  }
-  // Fallback für direkte Ausführung im Editor
-  return getSpreadsheet();
+  return SpreadsheetApp.openById(SPREADSHEET_ID);
 }
 
 // ------------------------------------------------------------
