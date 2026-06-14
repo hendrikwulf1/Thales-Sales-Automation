@@ -71,13 +71,18 @@ function calcPoints(tippDE, tippCU, actualDE, actualCU) {
 // Alle Tipps laden, Punkte berechnen, sortieren
 // ------------------------------------------------------------
 function getLeaderboard() {
-  var ss         = getSpreadsheet();
-  var formSheet  = ss.getSheetByName(SHEET_FORM);
-  var lastRow    = formSheet.getLastRow();
-  var score      = getActualScore();
-  var players    = [];
+  var ss        = getSpreadsheet();
+  var formSheet = ss.getSheetByName(SHEET_FORM);
 
-  // Daten ab Zeile 2 (Zeile 1 = Kopfzeile)
+  if (!formSheet) {
+    var allNames = ss.getSheets().map(function(s) { return '"' + s.getName() + '"'; });
+    throw new Error('Blatt "' + SHEET_FORM + '" nicht gefunden. Vorhandene Blätter: ' + allNames.join(", "));
+  }
+
+  var lastRow = formSheet.getLastRow();
+  var score   = getActualScore();
+  var players = [];
+
   if (lastRow < 2) return { players: [], score: score, pot: 0, prizes: [] };
 
   var data = formSheet.getRange(2, 1, lastRow - 1, 4).getValues();
