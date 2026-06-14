@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="60">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tippspiel: Deutschland vs. Curaçao</title>
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+    crossorigin="anonymous"
+  >
+  <style>
+    body {
+      background: #0d1117;
+      color: #e6edf3;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    /* ---- Scoreboard ---- */
+    .scoreboard {
+      background: linear-gradient(135deg, #1a1f2e, #252d3d);
+      border: 1px solid #30363d;
+      border-radius: 16px;
+      padding: 2rem 3rem;
+      text-align: center;
+    }
+    .scoreboard .teams {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: #8b949e;
+      text-transform: uppercase;
+    }
+    .scoreboard .goals {
+      font-size: 4.5rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+      letter-spacing: 0.05em;
+    }
+    .scoreboard .goals .vs {
+      font-size: 2.5rem;
+      color: #3fb950;
+      margin: 0 0.4rem;
+    }
+    .flag { font-size: 2rem; }
+
+    /* ---- Pot Box ---- */
+    .pot-box {
+      background: linear-gradient(135deg, #1c2230, #1e2a1e);
+      border: 1px solid #3fb950;
+      border-radius: 16px;
+      padding: 1.5rem 2rem;
+    }
+    .pot-total {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #3fb950;
+    }
+    .prize-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #21262d;
+    }
+    .prize-row:last-child { border-bottom: none; }
+    .prize-rank {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+    .rank-1 { background: #b8860b; color: #fff; }
+    .rank-2 { background: #6b7280; color: #fff; }
+    .rank-3 { background: #92400e; color: #fff; }
+    .prize-amount {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #3fb950;
+      margin-left: auto;
+    }
+
+    /* ---- Leaderboard ---- */
+    .leaderboard-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .leaderboard-card .card-header {
+      background: #21262d;
+      font-size: 1.1rem;
+      font-weight: 700;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #30363d;
+      color: #e6edf3;
+    }
+    .lb-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .lb-table thead th {
+      background: #21262d;
+      color: #8b949e;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid #30363d;
+    }
+    .lb-table tbody tr {
+      border-bottom: 1px solid #21262d;
+      transition: background 0.15s;
+    }
+    .lb-table tbody tr:last-child { border-bottom: none; }
+    .lb-table tbody tr:hover { background: #1c2128; }
+    .lb-table tbody td {
+      padding: 0.85rem 1.25rem;
+      vertical-align: middle;
+    }
+
+    /* Rang-Badge */
+    .rank-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.85rem;
+    }
+    .rank-badge.gold   { background: #b8860b; color: #fff; }
+    .rank-badge.silver { background: #6b7280; color: #fff; }
+    .rank-badge.bronze { background: #92400e; color: #fff; }
+    .rank-badge.other  { background: #21262d; color: #8b949e; }
+
+    /* Punkte-Badge */
+    .pts-badge {
+      background: #21262d;
+      border-radius: 8px;
+      padding: 0.25rem 0.65rem;
+      font-weight: 700;
+      font-size: 1rem;
+      color: #e6edf3;
+    }
+    .pts-3 { background: #1f3d2a; color: #3fb950; }
+    .pts-2 { background: #1e2a3a; color: #58a6ff; }
+    .pts-1 { background: #2d2a1e; color: #e3b341; }
+    .pts-0 { background: #21262d; color: #6b7280; }
+
+    .tipp-pill {
+      background: #21262d;
+      border-radius: 8px;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.9rem;
+      font-family: monospace;
+      color: #cdd9e5;
+    }
+
+    /* ---- Auto-Refresh Badge ---- */
+    .refresh-badge {
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      color: #8b949e;
+      padding: 0.3rem 0.8rem;
+    }
+    .pulse {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #3fb950;
+      margin-right: 6px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    section-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #8b949e;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+<?!= include("Loader"); ?>
+
+<div id="app" style="display:none">
+
+  <!-- Header -->
+  <div class="container py-4">
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+      <div>
+        <h1 class="mb-0 fw-bold" style="font-size:1.6rem">⚽ Tippspiel</h1>
+        <p class="mb-0" style="color:#8b949e;font-size:0.85rem">EM-Qualifikation · Gruppe C</p>
+      </div>
+      <span class="refresh-badge">
+        <span class="pulse"></span>Live · Refresh alle 60 s
+      </span>
+    </div>
+
+    <!-- Scoreboard -->
+    <div class="scoreboard mb-4" id="scoreboard">
+      <div class="teams mb-2">
+        <span class="flag">🇩🇪</span> Deutschland &nbsp;vs&nbsp; Curaçao <span class="flag">🇨🇼</span>
+      </div>
+      <div class="goals" id="scoreDisplay">
+        <span id="scoreDE">–</span>
+        <span class="vs">:</span>
+        <span id="scoreCU">–</span>
+      </div>
+      <div style="color:#8b949e;font-size:0.8rem;margin-top:0.5rem">Aktueller Spielstand</div>
+    </div>
+
+    <!-- Pot & Gewinnverteilung -->
+    <div class="pot-box mb-4">
+      <div class="d-flex align-items-baseline gap-3 mb-3 flex-wrap">
+        <div>
+          <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:.1em;color:#8b949e">Gesamtpot</div>
+          <div class="pot-total" id="potTotal">— €</div>
+        </div>
+        <div style="color:#8b949e;font-size:0.8rem" id="playerCount"></div>
+      </div>
+      <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:.1em;color:#8b949e;margin-bottom:0.5rem">Aktuelle Gewinnverteilung</div>
+      <div id="prizeList"></div>
+    </div>
+
+    <!-- Leaderboard -->
+    <div class="leaderboard-card">
+      <div class="card-header">🏆 Leaderboard</div>
+      <div class="table-responsive">
+        <table class="lb-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Tipp</th>
+              <th>Punkte</th>
+              <th>Exakt</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboardBody">
+            <tr><td colspan="5" class="text-center py-4" style="color:#8b949e">Lade Daten …</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Legende -->
+    <div class="mt-3 d-flex gap-3 flex-wrap" style="font-size:0.75rem;color:#8b949e">
+      <span><span class="pts-badge pts-3">3</span> Exaktes Ergebnis</span>
+      <span><span class="pts-badge pts-2">2</span> Richtige Differenz</span>
+      <span><span class="pts-badge pts-1">1</span> Richtige Tendenz</span>
+      <span><span class="pts-badge pts-0">0</span> Daneben</span>
+    </div>
+
+    <p class="text-center mt-4" style="color:#3b4148;font-size:0.7rem">
+      Einsatz: 5 € pro Person · Zahlung per PayPal · Privates Tippspiel
+    </p>
+  </div>
+</div>
+
+<script>
+// Daten via google.script.run laden
+google.script.run
+  .withSuccessHandler(function(json) {
+    var data = JSON.parse(json);
+    renderApp(data);
+    document.getElementById("app").style.display = "block";
+    document.getElementById("loader").style.display = "none";
+  })
+  .withFailureHandler(function(err) {
+    document.getElementById("loader").innerHTML =
+      '<div class="text-center py-5" style="color:#f85149">Fehler beim Laden: ' + err.message + '</div>';
+  })
+  .getData();
+
+function renderApp(data) {
+  // Spielstand
+  document.getElementById("scoreDE").textContent = data.score.de;
+  document.getElementById("scoreCU").textContent = data.score.cu;
+
+  // Pot
+  document.getElementById("potTotal").textContent = formatEuro(data.pot);
+  document.getElementById("playerCount").textContent =
+    data.players.length + " Mitspieler × 5 €";
+
+  // Preisgeld-Liste
+  var prizeList = document.getElementById("prizeList");
+  prizeList.innerHTML = "";
+  var rankLabels = {1: "gold", 2: "silver", 3: "bronze"};
+  var rankEmoji  = {1: "🥇", 2: "🥈", 3: "🥉"};
+
+  if (data.prizes.length === 0) {
+    prizeList.innerHTML = '<div style="color:#8b949e;font-size:0.85rem">Noch keine Tipps abgegeben.</div>';
+  } else {
+    data.prizes.forEach(function(g) {
+      var row = document.createElement("div");
+      row.className = "prize-row";
+      var badgeClass = rankLabels[g.rank] || "other";
+      var emoji = rankEmoji[g.rank] || "#" + g.rank;
+      row.innerHTML =
+        '<div class="prize-rank rank-' + g.rank + '">' + emoji + '</div>' +
+        '<div>' +
+          '<div style="font-weight:600">' + g.names.join(", ") + '</div>' +
+          '<div style="color:#8b949e;font-size:0.78rem">Platz ' + g.rank +
+            (g.names.length > 1 ? ' (Dead Heat × ' + g.names.length + ')' : '') +
+          '</div>' +
+        '</div>' +
+        '<div class="prize-amount">' + formatEuro(g.prize) + '</div>';
+      prizeList.appendChild(row);
+    });
+  }
+
+  // Leaderboard
+  var tbody = document.getElementById("leaderboardBody");
+  tbody.innerHTML = "";
+  if (data.players.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4" style="color:#8b949e">Noch keine Tipps.</td></tr>';
+    return;
+  }
+
+  var rankBadgeMap = {1: "gold", 2: "silver", 3: "bronze"};
+  data.players.forEach(function(p) {
+    var tr  = document.createElement("tr");
+    var cls = rankBadgeMap[p.rank] || "other";
+    var ptsCls = "pts-" + Math.min(p.points, 3);
+    tr.innerHTML =
+      '<td><span class="rank-badge ' + cls + '">' + p.rank + '</span></td>' +
+      '<td style="font-weight:600">' + escHtml(p.name) + '</td>' +
+      '<td><span class="tipp-pill">' + p.tippDE + ':' + p.tippCU + '</span></td>' +
+      '<td><span class="pts-badge ' + ptsCls + '">' + p.points + '</span></td>' +
+      '<td style="color:#8b949e">' + (p.exact ? '⭐' : '–') + '</td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function formatEuro(val) {
+  return val.toLocaleString("de-DE", {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " €";
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+</script>
+
+</body>
+</html>
