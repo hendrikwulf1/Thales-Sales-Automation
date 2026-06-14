@@ -6,6 +6,19 @@ var SHEET_FORM    = "Formularantworten 1";
 var SHEET_CONFIG  = "Einstellungen";
 var EINSATZ       = 5;
 
+// Trage hier die ID deiner Google-Tabelle ein.
+// Du findest sie in der URL deiner Tabelle:
+// https://docs.google.com/spreadsheets/d/DIESE_ID_HIER/edit
+var SPREADSHEET_ID = "DEINE_TABELLEN_ID_HIER";
+
+function getSpreadsheet() {
+  if (SPREADSHEET_ID && SPREADSHEET_ID !== "DEINE_TABELLEN_ID_HIER") {
+    return SpreadsheetApp.openById(SPREADSHEET_ID);
+  }
+  // Fallback für direkte Ausführung im Editor
+  return getSpreadsheet();
+}
+
 // ------------------------------------------------------------
 // Web-App Entry Point
 // ------------------------------------------------------------
@@ -28,7 +41,7 @@ function include(filename) {
 // Ergebnis aus "Einstellungen"-Blatt lesen
 // ------------------------------------------------------------
 function getActualScore() {
-  var ss     = SpreadsheetApp.getActiveSpreadsheet();
+  var ss     = getSpreadsheet();
   var sheet  = ss.getSheetByName(SHEET_CONFIG);
   var toreDE = parseInt(sheet.getRange("B1").getValue()) || 0;
   var toreCU = parseInt(sheet.getRange("B2").getValue()) || 0;
@@ -62,7 +75,7 @@ function calcPoints(tippDE, tippCU, actualDE, actualCU) {
 // Alle Tipps laden, Punkte berechnen, sortieren
 // ------------------------------------------------------------
 function getLeaderboard() {
-  var ss         = SpreadsheetApp.getActiveSpreadsheet();
+  var ss         = getSpreadsheet();
   var formSheet  = ss.getSheetByName(SHEET_FORM);
   var lastRow    = formSheet.getLastRow();
   var score      = getActualScore();
