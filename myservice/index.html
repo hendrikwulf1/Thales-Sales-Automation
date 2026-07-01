@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MyService – Das Doctolib für Dienstleistungen</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo"><span class="dot"></span> MyService</div>
+  <nav class="tabs" id="mainTabs">
+    <button data-view="start" class="active">Start</button>
+    <button data-view="kunde">🔎 Problem lösen</button>
+    <button data-view="auftraege">Meine Aufträge <span class="cnt" id="cntOrders" hidden></span></button>
+    <button data-view="betrieb">🏢 Für Betriebe <span class="cnt" id="cntAnfragen" hidden></span></button>
+    <button data-view="plattform">Plattform <span class="cnt" id="cntMediation" hidden></span></button>
+  </nav>
+  <div class="demo-controls">
+    <span id="clock"></span>
+    <button class="btn small" id="btnFastForward" title="Simulierte Zeit – für das 48h-Freigabefenster">⏩ +12 h</button>
+    <button class="btn small ghost" id="btnReset" title="Demo-Daten zurücksetzen">↺ Reset</button>
+  </div>
+</header>
+
+<main>
+  <!-- ============ START / VISION ============ -->
+  <section class="view active" id="view-start">
+    <div class="hero">
+      <div class="eyebrow">KI-gestützte Vermittlungs- &amp; Abwicklungsplattform</div>
+      <h1>Das Doctolib für<br />alle Dienstleistungen.</h1>
+      <p class="lead">Problem beschreiben, Foto hochladen – MyService erkennt, was zu tun ist,
+        zeigt den <b>KI-kalkulierten Preis</b> jedes Betriebs in deiner Nähe und bucht den Termin.
+        <b>Ohne einen einzigen Anruf.</b></p>
+      <div class="row" style="justify-content:center; margin-top:18px;">
+        <button class="btn primary" data-goto="kunde">Jetzt Problem lösen →</button>
+        <button class="btn" data-goto="betrieb">Ich bin ein Betrieb</button>
+      </div>
+    </div>
+
+    <div class="grid c3" style="margin-top:26px;">
+      <div class="card"><h3>📅 Termine in Echtzeit</h3><p class="sub">Betriebe laden ihre freien Termine live hoch. Was du siehst, ist buchbar – keine Rückrufe, kein „wir melden uns“.</p></div>
+      <div class="card"><h3>💶 Preistransparenz durch KI</h3><p class="sub">Jeder Betrieb hinterlegt Grundpreise. Die KI erkennt dein Problem und rechnet daraus sofort einen Preisvorschlag je Firma – bevor du anfragst.</p></div>
+      <div class="card"><h3>🤫 Null Reibung</h3><p class="sub">Anfragen laufen asynchron und anonymisiert über die Plattform. Ein Button statt eines unangenehmen Telefonats.</p></div>
+    </div>
+
+    <h2 class="section-title">So funktioniert die Abwicklung (Treuhand-Modell)</h2>
+    <div class="card">
+      <div class="flow">
+        <div class="step"><div class="num">1</div><h4>Problem beschreiben</h4><p>Text + Foto, KI klassifiziert</p></div>
+        <div class="step"><div class="num">2</div><h4>Vergleichen</h4><p>Preis, Nähe, echte Bewertungen</p></div>
+        <div class="step"><div class="num">3</div><h4>Anonym anfragen</h4><p>Kein Anruf nötig</p></div>
+        <div class="step money"><div class="num">€</div><h4>Treuhand-Zahlung</h4><p>Geld liegt sicher bei MyService</p></div>
+        <div class="step"><div class="num">5</div><h4>Arbeit + Doku</h4><p>Nachher-Foto &amp; Rechnung Pflicht</p></div>
+        <div class="step money"><div class="num">✓</div><h4>Digitale Abnahme</h4><p>48h-Fenster, dann Auszahlung</p></div>
+      </div>
+    </div>
+
+    <div class="grid c2" style="margin-top:16px;">
+      <div class="card">
+        <h3>Die KI-Engine – das Herzstück</h3>
+        <table class="cmp">
+          <tr><th>Funktion</th><th>Was passiert</th></tr>
+          <tr><td><b>Bild- &amp; Texterkennung</b></td><td>Analysiert Prompt und Fotos, erkennt die genaue Art des Schadens.</td></tr>
+          <tr><td><b>Klassifizierung</b></td><td>Ordnet das Problem der richtigen Fachrichtung &amp; Standardleistung zu.</td></tr>
+          <tr><td><b>Preis-Kalkulation</b></td><td>Gleicht die Leistung mit den hinterlegten Grundpreisen jedes Betriebs ab → fundierter Preisvorschlag.</td></tr>
+        </table>
+        <p class="muted" style="margin-top:10px;">In dieser Demo läuft die Klassifizierung als regelbasiertes Modell im Browser – in Produktion ein ML-Klassifikator bzw. multimodales LLM. Probiere es im Tab „Problem lösen“ aus.</p>
+      </div>
+      <div class="card viz-root">
+        <div class="viz-title">Wohin fließen 200 € Auftragswert?</div>
+        <div class="viz-sub">Beispiel-Transaktion – der Kunde zahlt 205,80 € (inkl. 2,9 % Käuferschutz)</div>
+        <div id="feeSplitViz"></div>
+        <h3 style="margin-top:20px;">Drei Umsatzströme</h3>
+        <table class="cmp">
+          <tr><td><b>Provision</b></td><td>10 % jeder erfolgreichen Transaktion (zahlt der Betrieb)</td></tr>
+          <tr><td><b>Servicegebühr</b></td><td>2,9 % Käuferschutz auf den Endpreis (zahlt der Kunde)</td></tr>
+          <tr><td><b>Premium-Ranking</b></td><td>79 €/Monat für bevorzugte Listung – immer als „Premium“ gekennzeichnet</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <h2 class="section-title">Warum nicht einfach ChatGPT oder Claude fragen?</h2>
+    <div class="card">
+      <p class="sub">LLMs liefern <b>Informationen</b>. MyService liefert eine <b>transaktionale Lösung</b> – der Unterschied liegt in der Execution:</p>
+      <table class="cmp">
+        <tr><th></th><th>LLM / Chatbot</th><th>MyService</th></tr>
+        <tr><td>Handwerker finden &amp; Bewertungen zusammenfassen</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+        <tr><td>Grobe Preisspanne aus dem Internet</td><td class="yes">✓</td><td class="yes">✓ (exakt je Betrieb)</td></tr>
+        <tr><td>Weiß, ob der Betrieb <i>morgen 14 Uhr</i> Zeit hat</td><td class="no">✗</td><td class="yes">✓ Live-Kalender</td></tr>
+        <tr><td>Kennt aktuelle, individuelle Grundpreise</td><td class="no">✗</td><td class="yes">✓ Preis-Datenbank</td></tr>
+        <tr><td>Rechtssicherer Werkvertrag per Klick</td><td class="no">✗</td><td class="yes">✓ Zwei-Vertrags-Modell</td></tr>
+        <tr><td>Verbindliche Buchung ins CRM des Betriebs</td><td class="no">✗</td><td class="yes">✓ CRM / Excel / E-Mail</td></tr>
+        <tr><td>Treuhand-Zahlung, Käuferschutz, Mediation</td><td class="no">✗</td><td class="yes">✓ Escrow-System</td></tr>
+      </table>
+    </div>
+
+    <h2 class="section-title">Rechtssicher: das Zwei-Vertrags-Modell</h2>
+    <div class="grid c2">
+      <div class="card">
+        <h3>Vertrag 1 · Nutzungsvertrag</h3>
+        <p class="sub">Zwischen <b>MyService</b> und beiden Nutzern (Kunde &amp; Betrieb). Regelt nur App-Nutzung, Treuhandkonto und Gebühren. <b>MyService haftet nie für die handwerkliche Leistung</b> – die Plattform ist reiner Vermittler.</p>
+      </div>
+      <div class="card">
+        <h3>Vertrag 2 · Werkvertrag</h3>
+        <p class="sub">Kommt ausschließlich zwischen <b>Kunde und Handwerksbetrieb</b> zustande – per Checkbox beim Klick auf „Kostenpflichtig buchen“, mit Verweis auf die im Profil hinterlegten AGB des Betriebs.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ KUNDE ============ -->
+  <section class="view" id="view-kunde">
+    <h2>Problem lösen – in 3 Schritten</h2>
+    <div class="wizard-steps" id="wizardSteps"></div>
+    <div id="kundeStep1"></div>
+    <div id="kundeStep2"></div>
+    <div id="kundeStep3"></div>
+  </section>
+
+  <!-- ============ MEINE AUFTRÄGE ============ -->
+  <section class="view" id="view-auftraege">
+    <div class="row spread">
+      <h2 style="margin:0;">Meine Aufträge</h2>
+      <span class="muted">Treuhand-Status, Chat und Freigabe – alles an einem Ort</span>
+    </div>
+    <div id="ordersList" class="stack" style="margin-top:16px;"></div>
+  </section>
+
+  <!-- ============ BETRIEB ============ -->
+  <section class="view" id="view-betrieb">
+    <div class="row spread">
+      <h2 style="margin:0;">Digitales Büro</h2>
+      <div class="row">
+        <span class="muted">Angemeldet als:</span>
+        <select id="betriebSelect" style="width:auto;"></select>
+      </div>
+    </div>
+    <div id="betriebStats" class="grid c4" style="margin:16px 0;"></div>
+    <div class="subtabs" id="betriebTabs">
+      <button data-bt="anfragen" class="active">📥 Anfragen</button>
+      <button data-bt="auftraege">🔨 Aufträge</button>
+      <button data-bt="kalender">📅 Kalender</button>
+      <button data-bt="preise">💶 Preise &amp; Profil</button>
+      <button data-bt="schnittstellen">🔌 Schnittstellen</button>
+      <button data-bt="statistik">📊 Statistik</button>
+    </div>
+    <div id="betriebContent"></div>
+  </section>
+
+  <!-- ============ PLATTFORM ============ -->
+  <section class="view" id="view-plattform">
+    <div class="row spread">
+      <h2 style="margin:0;">Plattform-Cockpit</h2>
+      <span class="muted">Treuhand-Ledger, Umsatzströme &amp; Mediation (Betreiber-Sicht)</span>
+    </div>
+    <div id="plattformStats" class="grid c4" style="margin:16px 0;"></div>
+    <div class="grid c2">
+      <div class="card viz-root">
+        <div class="viz-title">Plattform-Umsatz nach Strom</div>
+        <div class="viz-sub">Live aus dem Ledger dieser Demo-Sitzung</div>
+        <div id="umsatzViz"></div>
+      </div>
+      <div class="card">
+        <h3>⚖️ Offene Mediationen</h3>
+        <p class="muted">Eskalierte Konflikte: Beweise beider Parteien prüfen und nach Plattform-Richtlinien entscheiden.</p>
+        <div id="mediationList" class="stack"></div>
+      </div>
+    </div>
+    <h3 class="section-title">Treuhand-Ledger (alle Geldflüsse)</h3>
+    <div class="card" style="overflow-x:auto;">
+      <table class="ledger" id="ledgerTable"></table>
+    </div>
+  </section>
+</main>
+
+<footer class="site">MyService – Demo-Prototyp. Alle Betriebe, Bewertungen und Zahlungen sind simuliert; die Geschäftslogik ist voll funktionsfähig.</footer>
+
+<div class="modal-backdrop" id="modalBackdrop"><div class="modal" id="modalBox"></div></div>
+<div id="toasts"></div>
+<div class="viz-tip" id="vizTip"></div>
+
+<script src="data.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
